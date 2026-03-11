@@ -14,15 +14,18 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
+// allow serving widget.js
+app.use(express.static("."))
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
 const dimension = 1536
 
-const index = new HierarchicalNSW("cosine", dimension)
-
 console.log("Loading vector database...")
+
+const index = new HierarchicalNSW("cosine", dimension)
 
 index.readIndexSync("vector-db.bin")
 
@@ -41,6 +44,8 @@ app.post("/chat", async (req, res) => {
   try {
 
     const userMessage = req.body.message
+    const pageUrl = req.body.pageUrl
+    const pageTitle = req.body.pageTitle
 
     console.log("User message:", userMessage)
 
@@ -66,11 +71,16 @@ app.post("/chat", async (req, res) => {
         {
           role: "system",
           content: `
-You are the website assistant for Trifecta.
+You are the AI assistant for Trifecta.
+
+The visitor is currently on this page:
+
+Title: ${pageTitle}
+URL: ${pageUrl}
 
 Use the context below to answer the user's question.
 
-If the answer is unclear, recommend contacting the Trifecta team.
+If the answer isn't clear, suggest contacting the Trifecta team.
 
 Context:
 ${context}
