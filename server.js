@@ -4,6 +4,7 @@ import dotenv from "dotenv"
 import OpenAI from "openai"
 import fs from "fs"
 import hnswlib from "hnswlib-node"
+import rateLimit from "express-rate-limit"
 
 dotenv.config()
 
@@ -11,10 +12,40 @@ const { HierarchicalNSW } = hnswlib
 
 const app = express()
 
-app.use(cors())
 app.use(express.json())
 
-// allow widget.js to be served
+// allowed domains
+const allowedOrigins = [
+  "https://trifectaky.com",
+  "http://localhost"
+]
+
+// CORS protection
+app.use(
+  cors({
+    origin: function (origin, callback) {
+
+      if (!origin) return callback(null, true)
+
+      if (allowedOrigins.indexOf(origin) === -1) {
+        return callback(new Error("Not allowed by CORS"))
+      }
+
+      return callback(null, true)
+    }
+  })
+)
+
+// Rate limiter
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: "Too many requests. Please slow down."
+})
+
+app.use("/chat", limiter)
+
+// serve widget.js
 app.use(express.static("."))
 
 const openai = new OpenAI({
@@ -47,8 +78,6 @@ app.post("/chat", async (req, res) => {
     const history = req.body.history || []
     const pageUrl = req.body.pageUrl
     const pageTitle = req.body.pageTitle
-
-    console.log("User message:", userMessage)
 
     const embedding = await openai.embeddings.create({
       model: "text-embedding-3-small",
