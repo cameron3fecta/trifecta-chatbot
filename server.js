@@ -68,6 +68,14 @@ ${knowledgeBase}
 `
 
 /*
+HEALTH CHECK ROUTE
+*/
+
+app.get("/", (req, res) => {
+  res.send("Trifecta Chatbot API is running")
+})
+
+/*
 CHAT ENDPOINT
 */
 
@@ -119,7 +127,7 @@ app.post("/chat", async (req, res) => {
 START SERVER
 */
 
-const PORT = 3000
+const PORT = process.env.PORT || 3000
 
 app.listen(PORT, () => {
 
