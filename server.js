@@ -14,7 +14,7 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-// allow serving widget.js
+// allow widget.js to be served
 app.use(express.static("."))
 
 const openai = new OpenAI({
@@ -44,6 +44,7 @@ app.post("/chat", async (req, res) => {
   try {
 
     const userMessage = req.body.message
+    const history = req.body.history || []
     const pageUrl = req.body.pageUrl
     const pageTitle = req.body.pageTitle
 
@@ -86,6 +87,8 @@ Context:
 ${context}
 `
         },
+
+        ...history,
 
         {
           role: "user",

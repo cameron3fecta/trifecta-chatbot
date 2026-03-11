@@ -84,6 +84,8 @@
 
   const messages = document.getElementById("chatbot-messages")
 
+  let conversationHistory = []
+
   function addMessage(text, sender) {
 
     const div = document.createElement("div")
@@ -107,6 +109,11 @@
 
     addMessage(message, "user")
 
+    conversationHistory.push({
+      role: "user",
+      content: message
+    })
+
     input.value = ""
 
     const response = await fetch(
@@ -118,6 +125,7 @@
         },
         body: JSON.stringify({
           message: message,
+          history: conversationHistory,
           pageUrl: window.location.href,
           pageTitle: document.title
         })
@@ -127,6 +135,11 @@
     const data = await response.json()
 
     addMessage(data.reply, "bot")
+
+    conversationHistory.push({
+      role: "assistant",
+      content: data.reply
+    })
 
   }
 
