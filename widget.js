@@ -1,11 +1,24 @@
 (function () {
 
+  let conversationHistory = []
+
+  const button = document.createElement("div")
+  button.id = "chatbot-button"
+  button.innerHTML = "💬"
+
+  document.body.appendChild(button)
+
   const chatbot = document.createElement("div")
   chatbot.id = "trifecta-chatbot"
 
   chatbot.innerHTML = `
-    <div id="chatbot-header">Trifecta Assistant</div>
+    <div id="chatbot-header">
+      Trifecta Assistant
+      <span id="chatbot-close">✕</span>
+    </div>
+
     <div id="chatbot-messages"></div>
+
     <div id="chatbot-input-area">
       <input id="chatbot-input" placeholder="Ask us anything..." />
       <button id="chatbot-send">Send</button>
@@ -17,38 +30,63 @@
   const style = document.createElement("style")
 
   style.innerHTML = `
-  #trifecta-chatbot {
+
+  #chatbot-button {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    width: 320px;
-    height: 420px;
+    width: 60px;
+    height: 60px;
+    background: black;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    cursor: pointer;
+    z-index: 999999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+
+  #trifecta-chatbot {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 340px;
+    height: 440px;
     background: white;
     border-radius: 10px;
     border: 1px solid #ddd;
-    display: flex;
+    display: none;
     flex-direction: column;
     font-family: Arial;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
     z-index: 999999;
   }
 
   #chatbot-header {
-    background: #000;
+    background: black;
     color: white;
     padding: 10px;
     font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  #chatbot-close {
+    cursor: pointer;
   }
 
   #chatbot-messages {
     flex: 1;
-    padding: 10px;
+    padding: 12px;
     overflow-y: auto;
     font-size: 14px;
   }
 
   .chatbot-message {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
 
   .user {
@@ -69,6 +107,7 @@
     flex: 1;
     padding: 10px;
     border: none;
+    outline: none;
   }
 
   #chatbot-send {
@@ -78,13 +117,12 @@
     color: white;
     cursor: pointer;
   }
+
   `
 
   document.head.appendChild(style)
 
   const messages = document.getElementById("chatbot-messages")
-
-  let conversationHistory = []
 
   function addMessage(text, sender) {
 
@@ -146,5 +184,17 @@
   document
     .getElementById("chatbot-send")
     .addEventListener("click", sendMessage)
+
+  button.onclick = () => {
+    chatbot.style.display = "flex"
+    button.style.display = "none"
+  }
+
+  document
+    .getElementById("chatbot-close")
+    .onclick = () => {
+      chatbot.style.display = "none"
+      button.style.display = "flex"
+    }
 
 })()
