@@ -17,7 +17,8 @@ app.use(express.json())
 // Allowed domains
 const allowedOrigins = [
   "https://trifectaky.com",
-  "http://localhost"
+  "http://localhost",
+  "http://localhost:3000"
 ]
 
 // CORS protection
