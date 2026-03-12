@@ -1,200 +1,210 @@
-(function () {
+const API_URL = "https://trifecta-chatbot.onrender.com/chat"
 
-  let conversationHistory = []
+let chatHistory = []
 
-  const button = document.createElement("div")
-  button.id = "chatbot-button"
-  button.innerHTML = "💬"
+// Create floating button
+const button = document.createElement("div")
+button.innerHTML = "💬"
 
-  document.body.appendChild(button)
+button.style.position = "fixed"
+button.style.bottom = "20px"
+button.style.right = "20px"
+button.style.width = "60px"
+button.style.height = "60px"
+button.style.borderRadius = "50%"
+button.style.background = "#e14f25"
+button.style.color = "white"
+button.style.display = "flex"
+button.style.alignItems = "center"
+button.style.justifyContent = "center"
+button.style.fontSize = "24px"
+button.style.cursor = "pointer"
+button.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)"
+button.style.zIndex = "9999"
 
-  const chatbot = document.createElement("div")
-  chatbot.id = "trifecta-chatbot"
+document.body.appendChild(button)
 
-  chatbot.innerHTML = `
-    <div id="chatbot-header">
-      Trifecta Assistant
-      <span id="chatbot-close">✕</span>
-    </div>
 
-    <div id="chatbot-messages"></div>
+// Create chat window
+const chat = document.createElement("div")
 
-    <div id="chatbot-input-area">
-      <input id="chatbot-input" placeholder="Ask us anything..." />
-      <button id="chatbot-send">Send</button>
-    </div>
-  `
+chat.style.position = "fixed"
+chat.style.bottom = "90px"
+chat.style.right = "20px"
+chat.style.width = "340px"
+chat.style.height = "460px"
+chat.style.background = "white"
+chat.style.borderRadius = "10px"
+chat.style.boxShadow = "0 10px 25px rgba(0,0,0,0.3)"
+chat.style.display = "none"
+chat.style.flexDirection = "column"
+chat.style.overflow = "hidden"
+chat.style.zIndex = "9999"
 
-  document.body.appendChild(chatbot)
+document.body.appendChild(chat)
 
-  const style = document.createElement("style")
 
-  style.innerHTML = `
+// Header
+const header = document.createElement("div")
+header.innerHTML = "Trifecta Assistant"
 
-  #chatbot-button {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 60px;
-    height: 60px;
-    background: black;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 26px;
-    cursor: pointer;
-    z-index: 999999;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+header.style.background = "#037f74"
+header.style.color = "white"
+header.style.padding = "12px"
+header.style.fontWeight = "bold"
+header.style.fontFamily = "Arial"
+
+chat.appendChild(header)
+
+
+// Messages container
+const messages = document.createElement("div")
+
+messages.style.flex = "1"
+messages.style.padding = "10px"
+messages.style.overflowY = "auto"
+messages.style.fontFamily = "Arial"
+messages.style.background = "rgb(51 51 51 / 5%)"
+
+chat.appendChild(messages)
+
+
+// Input container
+const inputContainer = document.createElement("div")
+
+inputContainer.style.display = "flex"
+inputContainer.style.borderTop = "1px solid #ddd"
+
+chat.appendChild(inputContainer)
+
+
+// Input field
+const input = document.createElement("input")
+
+input.type = "text"
+input.placeholder = "Ask us anything..."
+
+input.style.flex = "1"
+input.style.border = "none"
+input.style.padding = "10px"
+input.style.fontSize = "14px"
+
+inputContainer.appendChild(input)
+
+
+// Send button
+const send = document.createElement("button")
+
+send.innerHTML = "Send"
+
+send.style.background = "#e14f25"
+send.style.color = "white"
+send.style.border = "none"
+send.style.padding = "10px 16px"
+send.style.cursor = "pointer"
+
+inputContainer.appendChild(send)
+
+
+// Toggle chat
+button.onclick = () => {
+
+  chat.style.display =
+    chat.style.display === "none" ? "flex" : "none"
+
+}
+
+
+// Add message
+function addMessage(text, sender) {
+
+  const msg = document.createElement("div")
+
+  msg.innerText = text
+
+  msg.style.marginBottom = "8px"
+  msg.style.padding = "8px"
+  msg.style.borderRadius = "6px"
+  msg.style.fontSize = "14px"
+  msg.style.maxWidth = "80%"
+
+  if (sender === "user") {
+
+    msg.style.background = "#e14f25"
+    msg.style.color = "white"
+    msg.style.marginLeft = "auto"
+
+  } else {
+
+    msg.style.background = "#f1f1f1"
+    msg.style.color = "#333"
+
   }
 
-  #trifecta-chatbot {
-    position: fixed;
-    bottom: 90px;
-    right: 20px;
-    width: 340px;
-    height: 440px;
-    background: white;
-    border-radius: 10px;
-    border: 1px solid #ddd;
-    display: none;
-    flex-direction: column;
-    font-family: Arial;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    z-index: 999999;
-  }
+  messages.appendChild(msg)
 
-  #chatbot-header {
-    background: black;
-    color: white;
-    padding: 10px;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-  }
+  messages.scrollTop = messages.scrollHeight
+}
 
-  #chatbot-close {
-    cursor: pointer;
-  }
 
-  #chatbot-messages {
-    flex: 1;
-    padding: 12px;
-    overflow-y: auto;
-    font-size: 14px;
-  }
+// Send message
+async function sendMessage() {
 
-  .chatbot-message {
-    margin-bottom: 12px;
-  }
+  const text = input.value.trim()
 
-  .user {
-    text-align: right;
-    font-weight: bold;
-  }
+  if (!text) return
 
-  .bot {
-    text-align: left;
-  }
+  addMessage(text, "user")
 
-  #chatbot-input-area {
-    display: flex;
-    border-top: 1px solid #ddd;
-  }
+  chatHistory.push({
+    role: "user",
+    content: text
+  })
 
-  #chatbot-input {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    outline: none;
-  }
+  input.value = ""
 
-  #chatbot-send {
-    padding: 10px;
-    border: none;
-    background: black;
-    color: white;
-    cursor: pointer;
-  }
+  const res = await fetch(API_URL, {
 
-  `
+    method: "POST",
 
-  document.head.appendChild(style)
+    headers: {
+      "Content-Type": "application/json"
+    },
 
-  const messages = document.getElementById("chatbot-messages")
+    body: JSON.stringify({
 
-  function addMessage(text, sender) {
+      message: text,
+      history: chatHistory,
+      pageUrl: window.location.href,
+      pageTitle: document.title
 
-    const div = document.createElement("div")
-
-    div.className = "chatbot-message " + sender
-
-    div.innerText = text
-
-    messages.appendChild(div)
-
-    messages.scrollTop = messages.scrollHeight
-  }
-
-  async function sendMessage() {
-
-    const input = document.getElementById("chatbot-input")
-
-    const message = input.value
-
-    if (!message) return
-
-    addMessage(message, "user")
-
-    conversationHistory.push({
-      role: "user",
-      content: message
     })
 
-    input.value = ""
+  })
 
-    const response = await fetch(
-      "https://trifecta-chatbot.onrender.com/chat",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message: message,
-          history: conversationHistory,
-          pageUrl: window.location.href,
-          pageTitle: document.title
-        })
-      }
-    )
+  const data = await res.json()
 
-    const data = await response.json()
+  addMessage(data.reply, "bot")
 
-    addMessage(data.reply, "bot")
+  chatHistory.push({
+    role: "assistant",
+    content: data.reply
+  })
 
-    conversationHistory.push({
-      role: "assistant",
-      content: data.reply
-    })
+}
+
+
+// Click send
+send.onclick = sendMessage
+
+
+// PRESS ENTER SUPPORT
+input.addEventListener("keypress", function(e) {
+
+  if (e.key === "Enter") {
+
+    sendMessage()
 
   }
 
-  document
-    .getElementById("chatbot-send")
-    .addEventListener("click", sendMessage)
-
-  button.onclick = () => {
-    chatbot.style.display = "flex"
-    button.style.display = "none"
-  }
-
-  document
-    .getElementById("chatbot-close")
-    .onclick = () => {
-      chatbot.style.display = "none"
-      button.style.display = "flex"
-    }
-
-})()
+})
