@@ -14,7 +14,7 @@ const app = express()
 
 app.use(express.json())
 
-// allowed domains
+// Allowed domains
 const allowedOrigins = [
   "https://trifectaky.com",
   "http://localhost"
@@ -36,7 +36,7 @@ app.use(
   })
 )
 
-// Rate limiter
+// Rate limiting
 const limiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
@@ -45,7 +45,7 @@ const limiter = rateLimit({
 
 app.use("/chat", limiter)
 
-// serve widget.js
+// Serve widget.js
 app.use(express.static("."))
 
 const openai = new OpenAI({
@@ -101,16 +101,26 @@ app.post("/chat", async (req, res) => {
         {
           role: "system",
           content: `
-You are the AI assistant for Trifecta.
+You are the AI assistant for Trifecta, a web design and digital marketing agency.
+
+Your goals are:
+
+1. Help visitors understand Trifecta's services.
+2. Answer questions using the website context.
+3. If a visitor expresses interest in a project, politely ask if they would like someone from the team to reach out.
+
+If they say yes, collect:
+
+Name
+Email
+Brief project description
+
+Be conversational, friendly, and helpful.
 
 The visitor is currently on this page:
 
 Title: ${pageTitle}
 URL: ${pageUrl}
-
-Use the context below to answer the user's question.
-
-If the answer isn't clear, suggest contacting the Trifecta team.
 
 Context:
 ${context}
