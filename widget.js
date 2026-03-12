@@ -1,8 +1,11 @@
 const API_URL = "https://trifecta-chatbot.onrender.com/chat"
 
 let chatHistory = []
+let leadMode = false
+let leadStep = 0
+let leadData = {}
 
-// Create floating button
+// Floating button
 const button = document.createElement("div")
 button.innerHTML = "💬"
 
@@ -25,7 +28,7 @@ button.style.zIndex = "9999"
 document.body.appendChild(button)
 
 
-// Create chat window
+// Chat window
 const chat = document.createElement("div")
 
 chat.style.position = "fixed"
@@ -57,7 +60,7 @@ header.style.fontFamily = "Arial"
 chat.appendChild(header)
 
 
-// Messages container
+// Messages
 const messages = document.createElement("div")
 
 messages.style.flex = "1"
@@ -78,7 +81,7 @@ inputContainer.style.borderTop = "1px solid #ddd"
 chat.appendChild(inputContainer)
 
 
-// Input field
+// Input
 const input = document.createElement("input")
 
 input.type = "text"
@@ -106,7 +109,7 @@ send.style.cursor = "pointer"
 inputContainer.appendChild(send)
 
 
-// Toggle chat
+// Toggle
 button.onclick = () => {
 
   chat.style.display =
@@ -147,6 +150,88 @@ function addMessage(text, sender) {
 }
 
 
+// Buttons
+function addButtons(options) {
+
+  const container = document.createElement("div")
+
+  options.forEach(option => {
+
+    const btn = document.createElement("button")
+
+    btn.innerText = option.text
+
+    btn.style.margin = "5px"
+    btn.style.padding = "6px 10px"
+    btn.style.border = "none"
+    btn.style.background = "#037f74"
+    btn.style.color = "white"
+    btn.style.cursor = "pointer"
+    btn.style.borderRadius = "4px"
+
+    btn.onclick = option.action
+
+    container.appendChild(btn)
+
+  })
+
+  messages.appendChild(container)
+
+}
+
+
+// Lead capture
+function startLeadCapture() {
+
+  leadMode = true
+  leadStep = 1
+
+  addMessage("Great! What's your name?", "bot")
+
+}
+
+
+function handleLead(text) {
+
+  if (leadStep === 1) {
+
+    leadData.name = text
+    leadStep = 2
+
+    addMessage("What's your email?", "bot")
+
+    return
+
+  }
+
+  if (leadStep === 2) {
+
+    leadData.email = text
+    leadStep = 3
+
+    addMessage("Tell us about your project.", "bot")
+
+    return
+
+  }
+
+  if (leadStep === 3) {
+
+    leadData.project = text
+
+    addMessage("Thanks! Someone from our team will reach out shortly.", "bot")
+
+    console.log("Lead captured:", leadData)
+
+    leadMode = false
+    leadStep = 0
+    leadData = {}
+
+  }
+
+}
+
+
 // Send message
 async function sendMessage() {
 
@@ -156,12 +241,19 @@ async function sendMessage() {
 
   addMessage(text, "user")
 
+  input.value = ""
+
+  if (leadMode) {
+
+    handleLead(text)
+    return
+
+  }
+
   chatHistory.push({
     role: "user",
     content: text
   })
-
-  input.value = ""
 
   const res = await fetch(API_URL, {
 
@@ -191,6 +283,16 @@ async function sendMessage() {
     content: data.reply
   })
 
+
+  if (data.reply.toLowerCase().includes("reach out")) {
+
+    addButtons([
+      { text: "Yes", action: startLeadCapture },
+      { text: "Just browsing", action: () => addMessage("No problem! Let me know if you have questions.", "bot") }
+    ])
+
+  }
+
 }
 
 
@@ -198,7 +300,7 @@ async function sendMessage() {
 send.onclick = sendMessage
 
 
-// PRESS ENTER SUPPORT
+// Enter support
 input.addEventListener("keypress", function(e) {
 
   if (e.key === "Enter") {
