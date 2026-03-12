@@ -5,7 +5,6 @@ let leadMode = false
 let leadStep = 0
 let leadData = {}
 
-// Floating button
 const button = document.createElement("div")
 button.innerHTML = "💬"
 
@@ -27,8 +26,6 @@ button.style.zIndex = "9999"
 
 document.body.appendChild(button)
 
-
-// Chat window
 const chat = document.createElement("div")
 
 chat.style.position = "fixed"
@@ -46,8 +43,6 @@ chat.style.zIndex = "9999"
 
 document.body.appendChild(chat)
 
-
-// Header
 const header = document.createElement("div")
 header.innerHTML = "Trifecta Assistant"
 
@@ -59,8 +54,6 @@ header.style.fontFamily = "Arial"
 
 chat.appendChild(header)
 
-
-// Messages
 const messages = document.createElement("div")
 
 messages.style.flex = "1"
@@ -71,8 +64,6 @@ messages.style.background = "rgb(51 51 51 / 5%)"
 
 chat.appendChild(messages)
 
-
-// Input container
 const inputContainer = document.createElement("div")
 
 inputContainer.style.display = "flex"
@@ -80,8 +71,6 @@ inputContainer.style.borderTop = "1px solid #ddd"
 
 chat.appendChild(inputContainer)
 
-
-// Input
 const input = document.createElement("input")
 
 input.type = "text"
@@ -94,8 +83,6 @@ input.style.fontSize = "14px"
 
 inputContainer.appendChild(input)
 
-
-// Send button
 const send = document.createElement("button")
 
 send.innerHTML = "Send"
@@ -108,8 +95,6 @@ send.style.cursor = "pointer"
 
 inputContainer.appendChild(send)
 
-
-// Toggle
 button.onclick = () => {
 
   chat.style.display =
@@ -117,8 +102,6 @@ button.onclick = () => {
 
 }
 
-
-// Add message
 function addMessage(text, sender) {
 
   const msg = document.createElement("div")
@@ -149,8 +132,30 @@ function addMessage(text, sender) {
   messages.scrollTop = messages.scrollHeight
 }
 
+function showTyping() {
 
-// Buttons
+  const typing = document.createElement("div")
+  typing.id = "typing"
+
+  typing.innerText = "● ● ●"
+
+  typing.style.fontSize = "18px"
+  typing.style.marginBottom = "8px"
+  typing.style.color = "#777"
+
+  messages.appendChild(typing)
+
+  messages.scrollTop = messages.scrollHeight
+}
+
+function removeTyping() {
+
+  const typing = document.getElementById("typing")
+
+  if (typing) typing.remove()
+
+}
+
 function addButtons(options) {
 
   const container = document.createElement("div")
@@ -179,17 +184,21 @@ function addButtons(options) {
 
 }
 
-
-// Lead capture
 function startLeadCapture() {
 
   leadMode = true
   leadStep = 1
 
-  addMessage("Great! What's your name?", "bot")
+  showTyping()
+
+  setTimeout(() => {
+
+    removeTyping()
+    addMessage("Great! What's your name?", "bot")
+
+  }, 800)
 
 }
-
 
 function handleLead(text) {
 
@@ -198,10 +207,16 @@ function handleLead(text) {
     leadData.name = text
     leadStep = 2
 
-    addMessage("What's your email?", "bot")
+    showTyping()
+
+    setTimeout(() => {
+
+      removeTyping()
+      addMessage("What's your email?", "bot")
+
+    }, 800)
 
     return
-
   }
 
   if (leadStep === 2) {
@@ -209,17 +224,30 @@ function handleLead(text) {
     leadData.email = text
     leadStep = 3
 
-    addMessage("Tell us about your project.", "bot")
+    showTyping()
+
+    setTimeout(() => {
+
+      removeTyping()
+      addMessage("Tell us about your project.", "bot")
+
+    }, 800)
 
     return
-
   }
 
   if (leadStep === 3) {
 
     leadData.project = text
 
-    addMessage("Thanks! Someone from our team will reach out shortly.", "bot")
+    showTyping()
+
+    setTimeout(() => {
+
+      removeTyping()
+      addMessage("Thanks! Someone from our team will reach out shortly.", "bot")
+
+    }, 900)
 
     console.log("Lead captured:", leadData)
 
@@ -231,8 +259,6 @@ function handleLead(text) {
 
 }
 
-
-// Send message
 async function sendMessage() {
 
   const text = input.value.trim()
@@ -255,6 +281,8 @@ async function sendMessage() {
     content: text
   })
 
+  showTyping()
+
   const res = await fetch(API_URL, {
 
     method: "POST",
@@ -276,31 +304,32 @@ async function sendMessage() {
 
   const data = await res.json()
 
-  addMessage(data.reply, "bot")
+  setTimeout(() => {
 
-  chatHistory.push({
-    role: "assistant",
-    content: data.reply
-  })
+    removeTyping()
 
+    addMessage(data.reply, "bot")
 
-  if (data.reply.toLowerCase().includes("reach out")) {
+    chatHistory.push({
+      role: "assistant",
+      content: data.reply
+    })
 
-    addButtons([
-      { text: "Yes", action: startLeadCapture },
-      { text: "Just browsing", action: () => addMessage("No problem! Let me know if you have questions.", "bot") }
-    ])
+    if (data.reply.toLowerCase().includes("reach out")) {
 
-  }
+      addButtons([
+        { text: "Yes", action: startLeadCapture },
+        { text: "Just browsing", action: () => addMessage("No problem! Let me know if you have questions.", "bot") }
+      ])
+
+    }
+
+  }, 700)
 
 }
 
-
-// Click send
 send.onclick = sendMessage
 
-
-// Enter support
 input.addEventListener("keypress", function(e) {
 
   if (e.key === "Enter") {
