@@ -5,12 +5,16 @@ import OpenAI from "openai"
 import fs from "fs"
 import hnswlib from "hnswlib-node"
 import rateLimit from "express-rate-limit"
+import nodemailer from "nodemailer"
 
 dotenv.config()
 
 const { HierarchicalNSW } = hnswlib
 
 const app = express()
+
+// IMPORTANT for Render proxy
+app.set("trust proxy", 1)
 
 app.use(express.json())
 
@@ -28,7 +32,7 @@ app.use(
 
       if (!origin) return callback(null, true)
 
-      if (allowedOrigins.indexOf(origin) === -1) {
+      if (!allowedOrigins.includes(origin)) {
         return callback(new Error("Not allowed by CORS"))
       }
 
@@ -46,9 +50,6 @@ const limiter = rateLimit({
 
 app.use("/chat", limiter)
 
-// Serve widget.js
-app.use(express.static("."))
-
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
@@ -58,7 +59,6 @@ const dimension = 1536
 console.log("Loading vector database...")
 
 const index = new HierarchicalNSW("cosine", dimension)
-
 index.readIndexSync("vector-db.bin")
 
 const texts = JSON.parse(
@@ -67,9 +67,12 @@ const texts = JSON.parse(
 
 console.log("Vector database loaded")
 
+// Root check
 app.get("/", (req, res) => {
   res.send("Trifecta Chatbot API is running")
 })
+
+/* CHAT ENDPOINT */
 
 app.post("/chat", async (req, res) => {
 
@@ -104,26 +107,23 @@ app.post("/chat", async (req, res) => {
           content: `
 You are the AI assistant for Trifecta, a web design and digital marketing agency.
 
-Your goals are:
+Your goals:
 
-1. Help visitors understand Trifecta's services.
-2. Answer questions using the website context.
-3. If a visitor expresses interest in a project, politely ask if they would like someone from the team to reach out.
+1. Help visitors understand Trifecta services.
+2. Answer questions using the provided context.
+3. If someone expresses interest in starting a project, ask if they'd like someone from the team to reach out.
 
-If they say yes, collect:
-
+If they agree, collect:
 Name
 Email
 Brief project description
 
-Be conversational, friendly, and helpful.
-
-The visitor is currently on this page:
+Visitor page:
 
 Title: ${pageTitle}
 URL: ${pageUrl}
 
-Context:
+Website context:
 ${context}
 `
         },
@@ -145,10 +145,68 @@ ${context}
 
   } catch (error) {
 
-    console.error(error)
+    console.error("Chat error:", error)
 
     res.status(500).json({
-      error: "Something went wrong"
+      error: "Chat request failed"
+    })
+
+  }
+
+})
+
+/* LEAD ENDPOINT */
+
+app.post("/lead", async (req, res) => {
+
+  try {
+
+    const { name, email, project } = req.body
+
+    console.log("Lead received:", name, email, project)
+
+    const transporter = nodemailer.createTransport({
+
+      host: process.env.EMAIL_HOST,
+      port: process.env.EMAIL_PORT,
+      secure: false,
+
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+
+    })
+
+    const info = await transporter.sendMail({
+
+      from: `"Trifecta Chatbot" <${process.env.EMAIL_USER}>`,
+
+      to: process.env.LEAD_EMAIL,
+
+      subject: "New Website Lead",
+
+      html: `
+        <h2>New Lead from Trifecta Chatbot</h2>
+
+        <p><b>Name:</b> ${name}</p>
+
+        <p><b>Email:</b> ${email}</p>
+
+        <p><b>Project:</b><br>${project}</p>
+      `
+    })
+
+    console.log("Lead email sent:", info.response)
+
+    res.json({ success: true })
+
+  } catch (error) {
+
+    console.error("Email send error:", error)
+
+    res.status(500).json({
+      error: "Lead email failed"
     })
 
   }
@@ -158,5 +216,7 @@ ${context}
 const PORT = process.env.PORT || 10000
 
 app.listen(PORT, () => {
+
   console.log(`Chatbot server running on port ${PORT}`)
+
 })
